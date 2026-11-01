@@ -5,19 +5,19 @@ Module: Computer Systems Security, University of Blida 1
 
 Goal: find the five flags inside the challenge container and explain the access-control failure behind each one.
 
-> [!abstract] Scope
+> [!NOTE] Scope
 > Everything below happens inside the provided container, as the unprivileged `student` account. No root login, no host or Docker socket attacks, no password guessing and no kernel exploits.
 
 ## Table of Contents
 
-- [[#Flags at a glance]]
-- [[#Setup]]
-- [[#Flag 1: hidden does not mean protected]]
-- [[#Flag 2: the confused deputy]]
-- [[#Flag 3: sudo and least privilege]]
-- [[#Flag 4: root executes what you can modify]]
-- [[#Flag 5: Linux capabilities]]
-- [[#Wrap-up]]
+- [Flags at a glance](#flags-at-a-glance)
+- [Setup](#setup)
+- [Flag 1: hidden does not mean protected](#flag-1-hidden-does-not-mean-protected)
+- [Flag 2: the confused deputy](#flag-2-the-confused-deputy)
+- [Flag 3: sudo and least privilege](#flag-3-sudo-and-least-privilege)
+- [Flag 4: root executes what you can modify](#flag-4-root-executes-what-you-can-modify)
+- [Flag 5: Linux capabilities](#flag-5-linux-capabilities)
+- [Wrap-up](#wrap-up)
 
 ---
 
@@ -37,7 +37,7 @@ Goal: find the five flags inside the challenge container and explain the access-
 
 The lab ships as `Linux_Access_Control_CTFv2.zip` with a `Dockerfile`, a `docker-compose.yml`, a `student/` folder whose contents land in the home directory, and `connect.sh`.
 
-![[pictures/image-01.png]]
+![Docker Compose project running in Docker Desktop](pictures/image-01.png)
 
 I built and started it from the extracted folder:
 
@@ -48,7 +48,7 @@ docker compose up -d --build
 
 Docker Desktop then lists `access-control-ctf` running from `linux_access_control_ctf-access-ctf:latest`, and the Exec tab opens a shell inside it.
 
-![[pictures/image-02.png]]
+![Interactive shell opened in the running container](pictures/image-02.png)
 
 That shell is bare: the prompt is just `$`, with no history and no job control. `python` is missing, `python3` is there, so I used its `pty` module to get a real terminal:
 
@@ -64,7 +64,7 @@ ls
 # lab-maintenance.log  read_vault-fixed.c  read_vault
 ```
 
-![[pictures/image-03.png]]
+![Student home directory and available files](pictures/image-03.png)
 
 ---
 
@@ -89,9 +89,9 @@ cat /opt/lab/data/.cache/.old/.tmp/.flag1
 # FLAG{hidden_files_are_not_access_control}
 ```
 
-![[pictures/image-04.png]]
+![Flag 1 path and contents](pictures/image-04.png)
 
-> [!success] Flag 1
+> [!TIP] Flag 1
 > ```
 > FLAG{hidden_files_are_not_access_control}
 > ```
@@ -136,9 +136,9 @@ So I passed it root's own flag file:
 # FLAG{confused_deputy_reads_for_the_attacker}
 ```
 
-![[pictures/flag-02.png]]
+![Flag 2 output from the SUID vault reader](pictures/flag-02.png)
 
-> [!success] Flag 2
+> [!TIP] Flag 2
 > ```
 > FLAG{confused_deputy_reads_for_the_attacker}
 > ```
@@ -194,10 +194,10 @@ id          # uid=0(root) gid=0(root)
 cat /root/flag3.txt
 ```
 
-![[pictures/image-05.png]]
-![[pictures/image-06.png]]
+![Flag 3 copied into the student's home directory](pictures/image-05.png)
+![Root shell obtained through the PATH hijack](pictures/image-06.png)
 
-> [!success] Flag 3
+> [!TIP] Flag 3
 > ```
 > FLAG{least_privilege_is_not_optional}
 > ```
@@ -244,9 +244,9 @@ cat flag4.txt
 # FLAG{root_should_never_execute_student_writable_code}
 ```
 
-![[pictures/image-07.png]]
+![Flag 4 copied by the root maintenance loop](pictures/image-07.png)
 
-> [!success] Flag 4
+> [!TIP] Flag 4
 > ```
 > FLAG{root_should_never_execute_student_writable_code}
 > ```
@@ -259,7 +259,7 @@ sudo /opt/lab/bin/root-maintenance-loop.sh
 # root@<container-id>:/home/student# cat /root/flag4.txt
 ```
 
-![[pictures/image-09.png]]
+![Root shell obtained through the writable maintenance script](pictures/image-09.png)
 
 The owner is root but the mode is `777`, so a privileged process kept executing a file I could rewrite. Nothing was wrong with the script's logic; the permissions let me choose what it ran, which breaks the authorization the whole arrangement depends on.
 
@@ -290,11 +290,11 @@ A Python interpreter carried `cap_dac_read_search`, which lets a process read fi
 ['FLAG{capabilities_can_be_more_precise_than_suid}\n']
 ```
 
-My first one-liner raised an `IndentationError`; the single-line form above works.
+My first attempt raised an `IndentationError`; the interactive form above works.
 
-![[pictures/image-08.png]]
+![Flag 5 read through the capable Python interpreter](pictures/image-08.png)
 
-> [!success] Flag 5
+> [!TIP] Flag 5
 > ```
 > FLAG{capabilities_can_be_more_precise_than_suid}
 > ```
